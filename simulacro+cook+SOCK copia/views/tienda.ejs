@@ -1,0 +1,78 @@
+<%- include("header", {}) %>
+<div class="container">
+    <h1>Tienda</h1>
+    <p>Aquí puede encontrar nuestros mejores productos</p>
+    <div>
+        <h2>Cecina</h2>
+        <p>La mejor cecina.</p>
+        <img src="/images/cecina.jpg" alt="Imagen de cecina" width="500" height="500">
+    </div>
+    <div>
+        <h2>Chorizo</h2>
+        <p>El mejor chorizo</p>
+        <img src="/images/chorizo.jpg" alt="Imagen de chorizo. Rico, rico." width="500" height="500">
+    </div>
+    <div>
+        <h2>Lomo</h2>
+        <p>Qué bueno está este lomo.</p>
+        <img src="/images/lomo.jpg" alt="Imagen de lomo" width="500" height="500">
+    </div>
+    <div>
+        <h2>Pimientos</h2>
+        <p>No podrían faltar.</p>
+        <img src="/images/pimientos.jpg" alt="Imagen de un bote de pimientos" width="500" height="499">
+    </div>
+</div>
+
+<!-- Área para notificaciones -->
+<div id="notifications" style="display: none; position: fixed; bottom: 0; width: 100%; background-color: #f8f9fa; padding: 10px; border-top: 1px solid #ccc;">
+    <h3>Notificaciones</h3>
+    <ul id="notifications-list" style="list-style: none; padding: 0;"></ul>
+</div>
+
+<!-- Botón para enviar un comentario -->
+<div style="margin-top: 20px; text-align: center;">
+    <button onclick="sendComment()" style="padding: 10px 20px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Enviar Comentario
+    </button>
+</div>
+
+<%- include("footer", {}) %>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    // Emitir evento cuando el usuario está logueado (puedes sustituir "username" por tu lógica de sesión)
+    const username = "<%= typeof user !== 'undefined' ? user.username : 'invitado' %>";
+    if (username !== 'invitado') {
+        socket.emit('userLoggedIn', username);
+    }
+
+    // Manejar notificaciones de nuevos productos
+    socket.on('notifyProduct', (product) => {
+        const notifications = document.getElementById('notifications');
+        const notificationsList = document.getElementById('notifications-list');
+        notifications.style.display = 'block'; // Mostrar el área de notificaciones
+
+        // Crear un elemento de notificación
+        const notification = document.createElement('li');
+        notification.textContent = `Nuevo producto añadido: ${product.name}, Precio: $${product.price}`;
+        notification.style.padding = '10px';
+        notification.style.borderBottom = '1px solid #ccc';
+        notificationsList.appendChild(notification);
+    });
+
+    // Manejar comentarios en tiempo real
+    socket.on('receiveComment', (comment) => {
+        alert(`Nuevo comentario recibido: ${comment}`);
+    });
+
+    // Función para enviar un comentario
+    function sendComment() {
+        const comment = prompt('Escribe tu comentario:');
+        if (comment) {
+            socket.emit('sendComment', comment);
+        }
+    }
+</script>
