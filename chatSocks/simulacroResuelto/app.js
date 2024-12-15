@@ -4,62 +4,25 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const session = require('express-session');
-const config = require('./config');
 
 const indexRouter = require('./routes/index');
 const loginRouter = require('./routes/login');
 const tiendaRouter = require('./routes/tienda');
 const restrictedRouter = require('./routes/restricted');
-const cookiesRouter = require('./routes/cookies');
-const database = require('./database/index'); // Ajusta la ruta según la estructura de tu proyecto
 
 const app = express();
-const http = require('http'); // Importar http para el servidor
-const server = http.createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(server);
-
-// Integración básica de Sockets.io
-io.on('connection', (socket) => {
-    console.log('Nuevo cliente conectado');
-
-    // Manejar usuarios logueados
-    socket.on('userLoggedIn', (username) => {
-        console.log(`Usuario logueado: ${username}`);
-    });
-
-    // Manejar notificaciones de productos
-    socket.on('newProduct', (product) => {
-        console.log(`Nuevo producto añadido: ${product.name} - $${product.price}`);
-        io.emit('notifyProduct', product); // Enviar notificación a todos los clientes
-    });
-
-    // Manejar comentarios en tiempo real
-    socket.on('sendComment', (comment) => {
-        console.log(`Comentario recibido: ${comment}`);
-        io.emit('receiveComment', comment); // Enviar comentario a todos los clientes
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Cliente desconectado');
-    });
-});
-
-// Ajustar el arranque del servidor para usar http
-server.listen(3000, () => {
-    console.log(`Servidor corriendo en http://localhost:3000`);
-});
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
+app.locals.title = "Embutidos León";
+app.locals.cookie = false;
 
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/cookies', cookiesRouter);
-
 app.use(session({
   secret: "Una frase muy secreta",
   resave: false,
@@ -77,32 +40,17 @@ app.use((req,res,next) => {
   next();
 });
 
-app.use((req, res, next) => {
-  res.locals.title = config.shopName;
-  next();
-});
-
-app.use((req, res, next) => {
-  res.locals.cookiesAccepted = req.session.user
-    ? database.user.hasAcceptedCookies(req.session.user.username)
-    : false;
-  next();
-});
-
-
-
-
+const database = require('./database');
 
 app.use('/', indexRouter);
 app.use('/login', loginRouter);
 app.use('/tienda', tiendaRouter);
 app.use('/restricted', restricted, restrictedRouter);
 app.use('/logout', (req,res) =>{
+  database.user.deletecookies(req.session.user.username);
   req.session.destroy();
   res.redirect("/");
 });
-
-
 
 function restricted(req, res, next){
   if(req.session.user){
@@ -111,6 +59,18 @@ function restricted(req, res, next){
     res.redirect("login");
   }
 }
+
+app.post('/savecookies', (req, res, next) => {
+  req.session.consentCookie = true;
+  app.locals.cookie = true;
+
+  if(req.session.user){
+    database.user.savecookies(req.session.user.username);
+    console.log("SAVE IN DATABASE");
+  }
+
+  res.json({ success: true });
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
