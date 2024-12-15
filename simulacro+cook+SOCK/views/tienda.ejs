@@ -1,0 +1,118 @@
+<%- include("header", {}) %>
+<div class="container">
+    <h1>Tienda</h1>
+    <p>Aquí puede encontrar nuestros mejores productos</p>
+    <div>
+        <h2>Cecina</h2>
+        <p>La mejor cecina.</p>
+        <img src="/images/cecina.jpg" alt="Imagen de cecina" width="500" height="500">
+    </div>
+    <div>
+        <h2>Chorizo</h2>
+        <p>El mejor chorizo</p>
+        <img src="/images/chorizo.jpg" alt="Imagen de chorizo. Rico, rico." width="500" height="500">
+    </div>
+    <div>
+        <h2>Lomo</h2>
+        <p>Qué bueno está este lomo.</p>
+        <img src="/images/lomo.jpg" alt="Imagen de lomo" width="500" height="500">
+    </div>
+    <div>
+        <h2>Pimientos</h2>
+        <p>No podrían faltar.</p>
+        <img src="/images/pimientos.jpg" alt="Imagen de un bote de pimientos" width="500" height="499">
+    </div>
+</div>
+
+<!-- Área para notificaciones -->
+<div id="notifications" style="display: none; position: fixed; bottom: 0; width: 100%; background-color: #f8f9fa; padding: 10px; border-top: 1px solid #ccc;">
+    <h3>Notificaciones</h3>
+    <ul id="notifications-list" style="list-style: none; padding: 0;"></ul>
+</div>
+
+<!-- Botón para mostrar la sección de comentarios (solo para usuarios registrados) -->
+<% if (typeof user !== 'undefined') { %>
+    <div style="margin-top: 20px; text-align: center;">
+        <button onclick="sendComment()" style="padding: 10px 20px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Enviar Comentario
+        </button>
+    </div>
+<% } %>
+
+<!-- Sección para escribir el comentario -->
+<div id="comment-section" style="display: none; margin-top: 20px; text-align: center;">
+    <input id="comment-input" type="text" placeholder="Escribe tu comentario" style="padding: 10px; font-size: 16px; width: 80%; border: 1px solid #ccc; border-radius: 5px;">
+    <button onclick="submitComment()" style="padding: 10px 20px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Enviar
+    </button>
+</div>
+
+<%- include("footer", {}) %>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io({
+        transports: ['websocket']
+    });
+
+    // Función para mostrar el área de comentarios
+    function sendComment() {
+    console.log('Botón "Enviar Comentario" presionado');
+    const commentSection = document.getElementById('comment-section');
+    if (commentSection) {
+        console.log('Elemento encontrado:', commentSection);
+        
+        // Forzar repintado del DOM
+        commentSection.style.display = 'block';
+        commentSection.offsetHeight; // Forzar al navegador a recalcular el estilo
+        console.log('Estilo cambiado a block y forzado repintado');
+    } else {
+        console.error('Elemento "comment-section" no encontrado');
+    }
+}
+
+
+    // Función para enviar el comentario al servidor
+    function submitComment() {
+        const commentInput = document.getElementById('comment-input');
+        const comment = commentInput.value.trim(); // Obtener el comentario del campo de texto
+        if (comment) {
+            console.log(`Comentario enviado: ${comment}`);
+            socket.emit('sendComment', comment); // Emitir el comentario al servidor
+            commentInput.value = ''; // Limpiar el campo de texto
+            alert('Comentario enviado correctamente');
+        } else {
+            alert('Por favor, escribe un comentario antes de enviarlo.');
+        }
+    }
+
+    // Escuchar el evento de comentarios en tiempo real
+    socket.on('receiveComment', (comment) => {
+        const notifications = document.getElementById('notifications');
+        const notificationsList = document.getElementById('notifications-list');
+        notifications.style.display = 'block';
+
+        const notification = document.createElement('li');
+        notification.textContent = `Nuevo comentario: ${comment}`;
+        notification.style.padding = '10px';
+        notification.style.borderBottom = '1px solid #ccc';
+
+        notificationsList.appendChild(notification);
+
+        // Hacer que la notificación desaparezca después de 5 segundos
+        setTimeout(() => {
+            notificationsList.removeChild(notification);
+            if (notificationsList.children.length === 0) {
+                notifications.style.display = 'none'; // Ocultar el área si no hay notificaciones
+            }
+        }, 5000);
+    });
+
+    socket.on('connect', () => {
+        console.log('Conectado al servidor de Sockets.io');
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Desconectado del servidor');
+    });
+</script>

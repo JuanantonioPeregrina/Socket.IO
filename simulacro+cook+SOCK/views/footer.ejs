@@ -1,0 +1,170 @@
+</body>
+<section class="cookies">
+    <h2 class="cookies__titulo">Uso de cookies</h2>
+    <p class="cookies__texto">Usamos cookies para mejorar tu experiencia en la web.</p>
+    <div class="cookies__botones">
+        <button class="cookies__boton cookies__boton--si"> Aceptar</button>
+        <button class="cookies__boton cookies__boton--no" onclick="location.href='https://www.google.es'">Rechazar</button>
+    </div>
+        
+        
+    </div>
+</section>
+
+<!-- No borrar, aquí se generarán todas las etiquetas <script> si acepta el usuario -->
+<div id="nuevosScripts"></div>
+<style>
+    .cookies {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgb(213, 213, 213);
+  color: rgb(0, 0, 0);
+  font-family: arial;
+  text-align: center;
+}
+/*
+.cookies__boton {
+  background: initial;
+  border: 2px solid white;
+  padding: 1rem;
+  font-size: 1rem;
+  color: rgb(0, 0, 0);
+  width: 5rem;
+  text-align: center;
+}*/
+
+
+
+button {
+    padding: 0.2rem;
+    width: 5rem;
+    margin-bottom: 15px;
+}
+</style>
+
+<!-- No borrar, aquí se generarán todas las etiquetas <script> si acepta el usuario -->
+    <div id="nuevosScripts"></div>
+
+    <script defer>
+    let cookies = () => {
+        //======================================================================
+        // COOKIES
+        //======================================================================
+    
+        //-----------------------------------------------------
+        // Configuración
+        //-----------------------------------------------------
+        const urlsScriptsCookies = ['https://analytics.google.com', 'https://facebook.com'];
+    
+        function contenidoScriptsCookies () {
+            ////////////  ¿Google Analítics? /////////////
+            ////////////  ¿Facebook Pixel? /////////////
+            ////////////  ¿Admob? /////////////
+            ////////////  etc  /////////////
+        }
+    
+    
+        //-----------------------------------------------------
+        // Variables
+        //-----------------------------------------------------
+        const seccionCookie = document.querySelector('section.cookies');
+        const cookieSi = document.querySelector('.cookies__boton--si');
+        const cookieNo = document.querySelector('.cookies__boton--no');
+        const nuevosScripts = document.querySelector('#nuevosScripts');
+    
+        //-----------------------------------------------------
+        // Funciones
+        //-----------------------------------------------------
+    
+        /**
+          * Método que oculta la sección de Cookie para siempre
+          */
+        function ocultarCookie() {
+            // Borra la sección de cookies en el HTML
+            seccionCookie.remove();
+        }
+    
+        /**
+          * Método que marca las cookies como aceptadas
+          */
+        async function aceptarCookies() {
+            // Oculta el HTML de cookies
+            ocultarCookie();
+            // Guarda que ha aceptado
+            localStorage.setItem('cookie', true);
+             // Lógica para guardar en la base de datos si está logeado
+            const isUserLoggedIn = document.body.dataset.userLoggedIn === 'true';
+            if (isUserLoggedIn) {
+                try {
+                    const response = await fetch('/cookies/accept', { method: 'POST' });
+                    if (!response.ok) {
+                        console.error('Error al guardar la aceptación de cookies en la base de datos');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+            // Tu codigo a ejecutar si aceptan las cookies
+            ejecutarSiAcepta();
+        }
+    
+        /**
+          * Método que marca las cookies como denegadas
+          */
+        function denegarCookies() {
+            // Oculta el HTML de cookies
+            ocultarCookie();
+            // Guarda que ha aceptado
+            localStorage.setItem('cookie', false);
+            // Redirige a Google
+            window.location.href = 'https://www.google.es';
+        }
+    
+        /**
+          * Método que ejecuta tu código si aceptan las cookies
+          */
+        function ejecutarSiAcepta() {
+            // Crea los <script>
+            urlsScriptsCookies.forEach((url) => {
+                const nuevoScript = document.createElement('script');
+                nuevoScript.setAttribute('src', url);
+                nuevosScripts.appendChild(nuevoScript);
+            });
+            // Lanza los códigos
+            contenidoScriptsCookies();
+        }
+    
+        /**
+          * Método que inicia la lógica
+          */
+        function iniciar() {
+            // Comprueba si en el pasado el usuario ha marcado una opción
+            if (localStorage.getItem('cookie') !== null) {
+                if(localStorage.getItem('cookie') === 'true') {
+                    // Aceptó
+                    aceptarCookies();
+                } else {
+                    // No aceptó
+                    denegarCookies();
+                }
+            }
+        }
+    
+        //-----------------------------------------------------
+        // Eventos
+        //-----------------------------------------------------
+        cookieSi.addEventListener('click',aceptarCookies, false);
+        cookieNo.addEventListener('click',denegarCookies, false);
+    
+        return {
+            iniciar: iniciar
+        }
+    }
+    
+    // Activa el código. Comenta si quieres desactivarlo.
+    cookies().iniciar();
+    
+    </script>
+</html>
