@@ -1,0 +1,45 @@
+<%- include('header', { title: 'Soporte', user: user }) %>
+
+<div id="chat-container">
+    <h1>Chat de Soporte</h1>
+    <ul id="messages"></ul>
+    <form id="chat-form">
+        <input id="message-input" type="text" placeholder="Escribe tu mensaje..." required />
+        <button type="submit">Enviar</button>
+    </form>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    const role = '<%= user ? "admin" : "guest" %>'; // Determinar el rol basado en la sesión
+
+    // Unirse a la sala
+    socket.emit('joinSupport', role);
+
+    // Manejar envío de mensajes
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('message-input');
+        const message = input.value;
+        socket.emit('sendMessage', { role, message });
+        appendMessage(`Tú: ${message}`, 'self');
+        input.value = '';
+    });
+
+    // Recibir mensajes
+    socket.on('receiveMessage', ({ message, sender }) => {
+        appendMessage(`${sender === 'admin' ? 'Admin' : 'Invitado'}: ${message}`, 'other');
+    });
+
+    // Mostrar mensajes en la interfaz
+    function appendMessage(message, type) {
+        const messages = document.getElementById('messages');
+        const msgElement = document.createElement('li');
+        msgElement.textContent = message;
+        msgElement.className = type;
+        messages.appendChild(msgElement);
+    }
+</script>
+
+<%- include('footer') %>
