@@ -14,6 +14,7 @@ const cookiesRouter = require('./routes/cookies');
 const database = require('./database/index'); // Ajusta la ruta según la estructura de tu proyecto
 
 const soporteRouter = require('./routes/soporte');
+const chatModel = require('./database/models/chat.model');
 
 
 
@@ -30,8 +31,7 @@ io.on('connection', (socket) => {
   // Escuchar el evento de comentarios
   socket.on('sendComment', (comment) => {
       console.log(`Comentario recibido: ${comment}`);
-      // Enviar el comentario a todos los clientes conectados
-      io.emit('receiveComment', comment); // Esto asegura que todos reciban el mensaje
+      io.emit('receiveComment', comment); // Enviar a todos los clientes conectados
   });
 
   // Chat de soporte: Unirse a la sala
@@ -39,12 +39,27 @@ io.on('connection', (socket) => {
       const room = role === 'admin' ? 'admins' : 'guests';
       socket.join(room);
       console.log(`Usuario ${socket.id} se unió a la sala ${room}`);
+
+      // Enviar mensajes pendientes al usuario que acaba de unirse
+      const pendingMessages = chatModel.getPendingMessages(room);
+      pendingMessages.forEach((msg) => {
+          socket.emit('receiveMessage', msg);
+      });
   });
 
   // Chat de soporte: Manejar mensajes
   socket.on('sendMessage', ({ role, message }) => {
       const targetRoom = role === 'admin' ? 'guests' : 'admins';
-      io.to(targetRoom).emit('receiveMessage', { message, sender: role });
+      const msg = { message, sender: role, timestamp: new Date() };
+
+      // Si la sala tiene usuarios activos, enviar el mensaje
+      if (io.sockets.adapter.rooms.get(targetRoom)) {
+          io.to(targetRoom).emit('receiveMessage', msg);
+      } else {
+          // Almacenar mensaje como pendiente
+          chatModel.addPendingMessage(targetRoom, message, role);
+          console.log(`Mensaje pendiente guardado para la sala ${targetRoom}`);
+      }
   });
 
   // Manejar desconexión

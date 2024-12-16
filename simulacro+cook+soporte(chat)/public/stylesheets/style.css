@@ -50,27 +50,28 @@ li a:hover:not(.active) {
 }
 
 #messages {
-  list-style-type: none;
+  list-style-type: none; /* Eliminar viñetas */
   padding: 0;
-  height: 300px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  margin-bottom: 10px;
+  margin: 0;
+  height: 300px; /* Altura fija */
+  overflow-y: auto; /* Scroll si excede la altura */
+  background-color: #333; /* Fondo oscuro */
+  color: white;
+  display: flex;
+  flex-direction: column; /* Mensajes en columna */
+  gap: 5px; /* Espaciado entre mensajes */
 }
 
 #messages li {
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 5px;
-}
-
-#messages li.self {
-  background: #d1e7dd;
-  text-align: right;
+  margin: 0; /* Eliminar margen exterior */
+  padding: 10px; /* Espaciado interno */
+  border-radius: 5px; /* Bordes redondeados */
+  background-color: #d1e7dd; /* Fondo para mensajes del usuario */
+  color: black;
+  display: block; /* Cada mensaje en su propia línea */
+  word-wrap: break-word; /* Romper palabras largas */
 }
 
 #messages li.other {
-  background: #f8d7da;
-  text-align: left;
+  background-color: #f8d7da; /* Fondo para mensajes de otros */
 }
-
