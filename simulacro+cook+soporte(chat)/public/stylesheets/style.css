@@ -1,3 +1,4 @@
+/* Navbar */
 ul {
   list-style-type: none;
   margin: 0;
@@ -8,7 +9,7 @@ ul {
 
 li {
   float: left;
-  border-right:1px solid #bbb;
+  border-right: 1px solid #bbb;
 }
 
 li:last-child {
@@ -32,11 +33,12 @@ li a:hover:not(.active) {
   background-color: #04AA6D;
 }
 
-.right{
-  float:right
+.right {
+  float: right;
 }
 
-.container{
+/* Contenedor principal */
+.container {
   padding: 15px;
 }
 
@@ -45,33 +47,128 @@ li a:hover:not(.active) {
   margin: 0 auto;
   padding: 20px;
   border: 1px solid #ddd;
-  border-radius: 5px;
+  border-radius: 10px;
   background: #f9f9f9;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Mensajes */
 #messages {
-  list-style-type: none; /* Eliminar viñetas */
-  padding: 0;
+  list-style-type: none;
+  padding: 10px;
   margin: 0;
-  height: 300px; /* Altura fija */
-  overflow-y: auto; /* Scroll si excede la altura */
-  background-color: #333; /* Fondo oscuro */
+  height: 300px;
+  overflow-y: auto;
+  background-color: #2c3e50; /* Azul oscuro */
   color: white;
   display: flex;
-  flex-direction: column; /* Mensajes en columna */
-  gap: 5px; /* Espaciado entre mensajes */
+  flex-direction: column;
+  gap: 5px;
+  border-radius: 5px;
 }
 
 #messages li {
-  margin: 0; /* Eliminar margen exterior */
-  padding: 10px; /* Espaciado interno */
-  border-radius: 5px; /* Bordes redondeados */
-  background-color: #d1e7dd; /* Fondo para mensajes del usuario */
-  color: black;
-  display: block; /* Cada mensaje en su propia línea */
-  word-wrap: break-word; /* Romper palabras largas */
+  padding: 8px 12px;
+  border-radius: 5px;
+  word-wrap: break-word;
+  font-size: 1rem;
+  max-width: 80%;
+}
+
+#messages li.self {
+  background-color: #2ecc71; /* Verde */
+  color: white;
+  text-align: right;
+  margin-left: auto;
 }
 
 #messages li.other {
-  background-color: #f8d7da; /* Fondo para mensajes de otros */
+  background-color: #f8d7da; /* Rojo claro */
+  color: black;
+  text-align: left;
+  margin-right: auto;
+}
+
+#messages li.system {
+  background-color: #f1c40f; /* Amarillo */
+  color: #333;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Formulario de chat */
+#chat-form {
+  display: flex;
+  margin-top: 10px;
+}
+
+#message-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  outline: none;
+  font-size: 1rem;
+}
+
+#message-input:focus {
+  border-color: #3498db;
+}
+
+#chat-form button {
+  padding: 10px 15px;
+  margin-left: 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #3498db; /* Azul */
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#chat-form button:hover {
+  background-color: #2980b9; /* Azul oscuro */
+}
+
+/* Lista de invitados activos */
+#guest-list {
+  margin: 20px auto;
+  text-align: center;
+}
+
+#guest-list h3 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+#active-guests {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+#active-guests li {
+  padding: 5px 10px;
+  border: 1px solid #3498db;
+  border-radius: 5px;
+  background-color: #ecf0f1;
+  color: #2c3e50;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#active-guests li:hover {
+  background-color: #3498db;
+  color: white;
 }
