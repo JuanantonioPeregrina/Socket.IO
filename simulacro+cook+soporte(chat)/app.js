@@ -25,48 +25,71 @@ const { Server } = require('socket.io');
 const io = new Server(server);
 
 // Integración básica de Sockets.io
+let guestCounter = 0; // Contador global para numerar a los invitados
+const activeGuests = {}; // Objeto para almacenar invitados activos
+
 io.on('connection', (socket) => {
-  console.log('Nuevo cliente conectado:', socket.id);
+    console.log('Nuevo cliente conectado:', socket.id);
 
-  // Escuchar el evento de comentarios
-  socket.on('sendComment', (comment) => {
-      console.log(`Comentario recibido: ${comment}`);
-      io.emit('receiveComment', comment); // Enviar a todos los clientes conectados
-  });
+    let username = null; // Nombre asignado al usuario
+    let userRoom = null; // Sala específica del usuario
 
-  // Chat de soporte: Unirse a la sala
-  socket.on('joinSupport', (role) => {
-      const room = role === 'admin' ? 'admins' : 'guests';
-      socket.join(room);
-      console.log(`Usuario ${socket.id} se unió a la sala ${room}`);
+    // Chat de soporte: Unirse a la sala
+    socket.on('joinSupport', (role) => {
+        if (role === 'admin') {
+            username = 'Admin';
+            userRoom = 'admins';
+            socket.join(userRoom);
+            console.log(`${username} se unió a la sala ${userRoom}`);
 
-      // Enviar mensajes pendientes al usuario que acaba de unirse
-      const pendingMessages = chatModel.getPendingMessages(room);
-      pendingMessages.forEach((msg) => {
-          socket.emit('receiveMessage', msg);
-      });
-  });
+            // Enviar la lista de invitados activos
+            socket.emit('activeGuests', activeGuests);
+        } else {
+            guestCounter++;
+            username = `guest-${guestCounter}`;
+            userRoom = `guest-${socket.id}`;
+            socket.join(userRoom);
 
-  // Chat de soporte: Manejar mensajes
-  socket.on('sendMessage', ({ role, message }) => {
-      const targetRoom = role === 'admin' ? 'guests' : 'admins';
-      const msg = { message, sender: role, timestamp: new Date() };
+            // Guardar invitado activo
+            activeGuests[socket.id] = username;
 
-      // Si la sala tiene usuarios activos, enviar el mensaje
-      if (io.sockets.adapter.rooms.get(targetRoom)) {
-          io.to(targetRoom).emit('receiveMessage', msg);
-      } else {
-          // Almacenar mensaje como pendiente
-          chatModel.addPendingMessage(targetRoom, message, role);
-          console.log(`Mensaje pendiente guardado para la sala ${targetRoom}`);
-      }
-  });
+            console.log(`Usuario ${username} se unió a la sala ${userRoom}`);
 
-  // Manejar desconexión
-  socket.on('disconnect', () => {
-      console.log('Cliente desconectado:', socket.id);
-  });
+            // Notificar a los administradores
+            io.to('admins').emit('receiveMessage', {
+                message: `${username} se ha conectado`,
+                sender: 'Sistema'
+            });
+
+            io.to('admins').emit('activeGuests', activeGuests);
+        }
+    });
+
+    // Chat de soporte: Manejar mensajes
+    socket.on('sendMessage', ({ role, message, targetRoom }) => {
+        if (role === 'admin') {
+            if (targetRoom && activeGuests[targetRoom]) {
+                io.to(`guest-${targetRoom}`).emit('receiveMessage', { message, sender: 'Admin' });
+            }
+        } else {
+            io.to('admins').emit('receiveMessage', { message, sender: username });
+        }
+    });
+
+    // Manejar desconexión
+    socket.on('disconnect', () => {
+        if (username && userRoom) {
+            delete activeGuests[socket.id]; // Eliminar invitado de la lista
+            io.to('admins').emit('activeGuests', activeGuests);
+            io.to('admins').emit('receiveMessage', {
+                message: `${username} se ha desconectado`,
+                sender: 'Sistema'
+            });
+        }
+    });
 });
+
+
 
 
 // Ajustar el arranque del servidor para usar http

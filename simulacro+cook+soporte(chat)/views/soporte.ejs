@@ -9,30 +9,51 @@
     </form>
 </div>
 
+<div id="guest-list">
+    <h3>Invitados Activos</h3>
+    <ul id="active-guests"></ul>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
+
+
 <script>
     const socket = io();
-    const role = '<%= user ? "admin" : "guest" %>'; // Determinar el rol basado en la sesión
+    const role = '<%= user ? "admin" : "guest" %>';
 
-    // Unirse a la sala
     socket.emit('joinSupport', role);
 
-    // Manejar envío de mensajes
+    socket.on('activeGuests', (guests) => {
+        const guestList = document.getElementById('active-guests');
+        guestList.innerHTML = ''; // Limpiar la lista
+
+        for (const [socketId, username] of Object.entries(guests)) {
+            const listItem = document.createElement('li');
+            listItem.textContent = `${username} (ID: ${socketId})`;
+            guestList.appendChild(listItem);
+        }
+    });
+
     document.getElementById('chat-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const input = document.getElementById('message-input');
         const message = input.value;
-        socket.emit('sendMessage', { role, message });
+
+        if (role === 'admin') {
+            const targetRoom = prompt("Introduce el ID del invitado (ver lista):");
+            socket.emit('sendMessage', { role, message, targetRoom });
+        } else {
+            socket.emit('sendMessage', { role, message });
+        }
+
         appendMessage(`Tú: ${message}`, 'self');
         input.value = '';
     });
 
-    // Recibir mensajes
     socket.on('receiveMessage', ({ message, sender }) => {
-        appendMessage(`${sender === 'admin' ? 'Admin' : 'Invitado'}: ${message}`, 'other');
+        appendMessage(`${sender}: ${message}`, 'other');
     });
 
-    // Mostrar mensajes en la interfaz
     function appendMessage(message, type) {
         const messages = document.getElementById('messages');
         const msgElement = document.createElement('li');
@@ -41,5 +62,6 @@
         messages.appendChild(msgElement);
     }
 </script>
+
 
 <%- include('footer') %>
