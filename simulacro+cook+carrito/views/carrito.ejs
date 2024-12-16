@@ -1,0 +1,24 @@
+<%- include("header", {}) %>
+
+<div class="container">
+    <h1>Carrito de la Compra</h1>
+    <% if (cart && cart.length > 0) { %>
+        <ul>
+            <% cart.forEach(item => { %>
+                <li>
+                    <strong><%= item.name %></strong> - 
+                    <%= item.quantity %> x <%= item.price %> € 
+                </li>
+            <% }) %>
+        </ul>
+        <form method="POST" action="/carrito/clear">
+            <button type="submit" style="background-color: red; color: white; padding: 10px; border: none; border-radius: 5px;">
+                Vaciar Carrito
+            </button>
+        </form>
+    <% } else { %>
+        <p>Tu carrito está vacío.</p>
+    <% } %>
+</div>
+
+<%- include("footer", {}) %>
