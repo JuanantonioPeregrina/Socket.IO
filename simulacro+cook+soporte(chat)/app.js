@@ -27,59 +27,60 @@ const io = new Server(server);
 // Integración básica de Sockets.io
 let guestCounter = 0; // Contador global para numerar a los invitados
 const activeGuests = {}; // Objeto para almacenar invitados activos
+const chatHistory = {}; // Historial de mensajes individuales
 
 io.on('connection', (socket) => {
     console.log('Nuevo cliente conectado:', socket.id);
 
-    let username = null; // Nombre asignado al usuario
-    let userRoom = null; // Sala específica del usuario
+    let username = null;
+    let userRoom = null;
 
-    // Chat de soporte: Unirse a la sala
     socket.on('joinSupport', (role) => {
         if (role === 'admin') {
             username = 'Admin';
             userRoom = 'admins';
             socket.join(userRoom);
-            console.log(`${username} se unió a la sala ${userRoom}`);
-
-            // Enviar la lista de invitados activos
-            socket.emit('activeGuests', activeGuests);
+            socket.emit('activeGuests', activeGuests); // Enviar lista de invitados
         } else {
             guestCounter++;
             username = `guest-${guestCounter}`;
             userRoom = `guest-${socket.id}`;
             socket.join(userRoom);
-
-            // Guardar invitado activo
             activeGuests[socket.id] = username;
 
-            console.log(`Usuario ${username} se unió a la sala ${userRoom}`);
+            // Inicializar historial si no existe
+            if (!chatHistory[userRoom]) chatHistory[userRoom] = [];
 
             // Notificar a los administradores
+            io.to('admins').emit('activeGuests', activeGuests);
             io.to('admins').emit('receiveMessage', {
                 message: `${username} se ha conectado`,
                 sender: 'Sistema'
             });
-
-            io.to('admins').emit('activeGuests', activeGuests);
         }
     });
 
-    // Chat de soporte: Manejar mensajes
     socket.on('sendMessage', ({ role, message, targetRoom }) => {
         if (role === 'admin') {
-            if (targetRoom && activeGuests[targetRoom]) {
-                io.to(`guest-${targetRoom}`).emit('receiveMessage', { message, sender: 'Admin' });
+            if (targetRoom && chatHistory[targetRoom]) {
+                chatHistory[targetRoom].push({ sender: 'Admin', message });
+                io.to(targetRoom).emit('receiveMessage', { sender: 'Admin', message });
             }
         } else {
-            io.to('admins').emit('receiveMessage', { message, sender: username });
+            chatHistory[userRoom].push({ sender: username, message });
+            io.to('admins').emit('receiveMessage', { sender: username, message, room: userRoom });
         }
     });
 
-    // Manejar desconexión
+    socket.on('requestChatHistory', (room) => {
+        if (chatHistory[room]) {
+            socket.emit('loadChatHistory', chatHistory[room]);
+        }
+    });
+
     socket.on('disconnect', () => {
-        if (username && userRoom) {
-            delete activeGuests[socket.id]; // Eliminar invitado de la lista
+        if (activeGuests[socket.id]) {
+            delete activeGuests[socket.id];
             io.to('admins').emit('activeGuests', activeGuests);
             io.to('admins').emit('receiveMessage', {
                 message: `${username} se ha desconectado`,
@@ -88,7 +89,6 @@ io.on('connection', (socket) => {
         }
     });
 });
-
 
 
 

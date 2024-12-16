@@ -15,44 +15,66 @@
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
-
-
 <script>
     const socket = io();
     const role = '<%= user ? "admin" : "guest" %>';
+    let currentRoom = null;
 
     socket.emit('joinSupport', role);
 
-    socket.on('activeGuests', (guests) => {
-        const guestList = document.getElementById('active-guests');
-        guestList.innerHTML = ''; // Limpiar la lista
-
-        for (const [socketId, username] of Object.entries(guests)) {
-            const listItem = document.createElement('li');
-            listItem.textContent = `${username} (ID: ${socketId})`;
-            guestList.appendChild(listItem);
-        }
-    });
-
     document.getElementById('chat-form').addEventListener('submit', (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevenir el refresco de la página
+
         const input = document.getElementById('message-input');
         const message = input.value;
 
         if (role === 'admin') {
-            const targetRoom = prompt("Introduce el ID del invitado (ver lista):");
-            socket.emit('sendMessage', { role, message, targetRoom });
+            if (currentRoom) {
+                socket.emit('sendMessage', { role, message, targetRoom: currentRoom });
+                appendMessage(`Tú: ${message}`, 'self');
+            } else {
+                alert('Selecciona un invitado para enviar un mensaje.');
+            }
         } else {
             socket.emit('sendMessage', { role, message });
+            appendMessage(`Tú: ${message}`, 'self');
         }
 
-        appendMessage(`Tú: ${message}`, 'self');
         input.value = '';
     });
 
-    socket.on('receiveMessage', ({ message, sender }) => {
+    if (role === 'admin') {
+        socket.on('activeGuests', (guests) => {
+            const guestList = document.getElementById('active-guests');
+            guestList.innerHTML = '';
+            for (const [socketId, username] of Object.entries(guests)) {
+                const listItem = document.createElement('li');
+                listItem.textContent = username;
+                listItem.addEventListener('click', () => {
+                    currentRoom = `guest-${socketId}`;
+                    loadChatHistory(currentRoom);
+                    socket.emit('requestChatHistory', currentRoom);
+                });
+                guestList.appendChild(listItem);
+            }
+        });
+
+        socket.on('loadChatHistory', (messages) => {
+            document.getElementById('messages').innerHTML = '';
+            messages.forEach(({ sender, message }) => {
+                appendMessage(`${sender}: ${message}`, 'other');
+            });
+        });
+    }
+
+    socket.on('receiveMessage', ({ sender, message }) => {
         appendMessage(`${sender}: ${message}`, 'other');
     });
+
+    function loadChatHistory(room) {
+        document.getElementById('messages').innerHTML = '';
+        appendMessage(`Conversación con ${room}`, 'system');
+    }
 
     function appendMessage(message, type) {
         const messages = document.getElementById('messages');
@@ -62,6 +84,5 @@
         messages.appendChild(msgElement);
     }
 </script>
-
 
 <%- include('footer') %>
