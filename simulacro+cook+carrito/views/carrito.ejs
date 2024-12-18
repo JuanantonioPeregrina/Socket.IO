@@ -6,15 +6,13 @@
         <ul>
             <% cart.forEach(item => { %>
                 <li>
-                    <strong><%= item.name %></strong> - 
-                    <%= item.quantity %> x <%= item.price %> € 
+                    <strong>Producto <%= item.productId || item.name %></strong> - 
+                    Cantidad: <%= item.quantity %> x <%= item.price || 10 %> €
                 </li>
             <% }) %>
         </ul>
         <form method="POST" action="/carrito/clear">
-            <button type="submit" style="background-color: red; color: white; padding: 10px; border: none; border-radius: 5px;">
-                Vaciar Carrito
-            </button>
+            <button type="submit" style="background-color: red; color: white;">Vaciar Carrito</button>
         </form>
     <% } else { %>
         <p>Tu carrito está vacío.</p>

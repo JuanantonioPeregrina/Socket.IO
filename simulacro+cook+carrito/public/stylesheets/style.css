@@ -40,4 +40,28 @@ li a:hover:not(.active) {
   padding: 15px;
 }
 
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+}
+
+.container {
+  margin: 20px auto;
+  max-width: 1200px;
+}
+
+h1, h2 {
+  color: #333;
+}
+
+button {
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #555;
+}
+
 

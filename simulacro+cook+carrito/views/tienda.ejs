@@ -1,93 +1,91 @@
 <%- include("header", {}) %>
-<div class="container">
-    <h1>Tienda</h1>
-<div class="container">
-    <h1>Tienda</h1>
-    <p>Aquí puede encontrar nuestros mejores productos</p>
 
-    <% productos.forEach(product => { %>
-        <div>
-            <h2><%= product.nombre %></h2>
-            <p><%= product.descripcion %></p>
-            <img src="<%= product.imagen %>" alt="Imagen de <%= product.nombre %>" width="500" height="500">
-            <form method="POST" action="/carrito/add">
-                <input type="hidden" name="productId" value="<%= product.id %>">
-                <button type="submit">Añadir al carrito</button>
-            </form>
+<div class="container">
+    <h1 style="text-align: center;">Tienda</h1>
+    <div style="display: flex; justify-content: space-between;">
+
+        <!-- Sección de productos -->
+        <div style="width: 70%;">
+            <% productos.forEach(product => { %>
+                <div style="border: 1px solid #ddd; padding: 15px; margin: 10px; border-radius: 5px; text-align: center;">
+                    <h2><%= product.nombre %></h2>
+                    <p><%= product.descripcion %></p>
+                    <img src="<%= product.imagen %>" alt="Imagen de <%= product.nombre %>" width="300" height="300">
+                    <br>
+                    <button onclick="addToCart('<%= product.id %>')" style="padding: 10px; margin-top: 10px; background-color: green; color: white; border: none; cursor: pointer;">
+                        Añadir al carrito
+                    </button>
+                </div>
+            <% }) %>
         </div>
-    <% }) %>
+
+        <!-- Sección del carrito -->
+        <div id="carrito" style="border: 1px solid #ccc; padding: 15px; border-radius: 5px; width: 25%; height: auto;">
+            <h2 style="text-align: center;">Carrito de la Compra</h2>
+            <ul id="carrito-items" style="list-style: none; padding: 0;"></ul>
+        </div>
+    </div>
 </div>
 
-<%- include("footer", {}) %>
-
-
-
-<%- include("footer", {}) %>
-
+<!-- Socket.IO y lógica del carrito -->
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io({
-        transports: ['websocket']
-    });
+    const socket = io();
+    const carritoItems = document.getElementById('carrito-items');
 
-    // Función para mostrar el área de comentarios
-    function sendComment() {
-    console.log('Botón "Enviar Comentario" presionado');
-    const commentSection = document.getElementById('comment-section');
-    if (commentSection) {
-        console.log('Elemento encontrado:', commentSection);
-        
-        // Forzar repintado del DOM
-        commentSection.style.display = 'block';
-        commentSection.offsetHeight; // Forzar al navegador a recalcular el estilo
-        console.log('Estilo cambiado a block y forzado repintado');
-    } else {
-        console.error('Elemento "comment-section" no encontrado');
-    }
-}
-
-
-    // Función para enviar el comentario al servidor
-    function submitComment() {
-        const commentInput = document.getElementById('comment-input');
-        const comment = commentInput.value.trim(); // Obtener el comentario del campo de texto
-        if (comment) {
-            console.log(`Comentario enviado: ${comment}`);
-            socket.emit('sendComment', comment); // Emitir el comentario al servidor
-            commentInput.value = ''; // Limpiar el campo de texto
-            alert('Comentario enviado correctamente');
-        } else {
-            alert('Por favor, escribe un comentario antes de enviarlo.');
-        }
+    // Añadir producto al carrito
+    function addToCart(productId) {
+        fetch('/carrito/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+        }).then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  alert("Producto añadido al carrito");
+              }
+          });
     }
 
-    // Escuchar el evento de comentarios en tiempo real
-    socket.on('receiveComment', (comment) => {
-        const notifications = document.getElementById('notifications');
-        const notificationsList = document.getElementById('notifications-list');
-        notifications.style.display = 'block';
+    // Eliminar producto del carrito
+    function removeFromCart(productId) {
+        fetch('/carrito/remove', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+        }).then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  alert("Producto eliminado del carrito");
+              }
+          });
+    }
 
-        const notification = document.createElement('li');
-        notification.textContent = `Nuevo comentario: ${comment}`;
-        notification.style.padding = '10px';
-        notification.style.borderBottom = '1px solid #ccc';
-
-        notificationsList.appendChild(notification);
-
-        // Hacer que la notificación desaparezca después de 5 segundos
-        setTimeout(() => {
-            notificationsList.removeChild(notification);
-            if (notificationsList.children.length === 0) {
-                notifications.style.display = 'none'; // Ocultar el área si no hay notificaciones
-            }
-        }, 5000);
-    });
-
-    socket.on('connect', () => {
-        console.log('Conectado al servidor de Sockets.io');
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Desconectado del servidor');
+    // Actualizar carrito en tiempo real
+    socket.on('cartUpdated', () => {
+        fetch('/carrito/json')
+            .then(response => response.json())
+            .then(cart => {
+                carritoItems.innerHTML = '';
+                if (cart.length > 0) {
+                    cart.forEach(item => {
+                        const li = document.createElement('li');
+                        li.style.marginBottom = "10px";
+                        li.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Producto ${item.productId} - Cantidad: ${item.quantity}</span>
+                                <button onclick="removeFromCart('${item.productId}')" style="background-color: red; color: white; border: none; padding: 5px; cursor: pointer;">
+                                    Quitar
+                                </button>
+                            </div>
+                        `;
+                        carritoItems.appendChild(li);
+                    });
+                } else {
+                    carritoItems.innerHTML = '<li>Tu carrito está vacío.</li>';
+                }
+            });
     });
 </script>
+
+<%- include("footer", {}) %>
