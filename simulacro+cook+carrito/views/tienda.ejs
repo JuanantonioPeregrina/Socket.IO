@@ -15,6 +15,16 @@
                     <button onclick="addToCart('<%= product.id %>')" style="padding: 10px; margin-top: 10px; background-color: green; color: white; border: none; cursor: pointer;">
                         Añadir al carrito
                     </button>
+
+                    <!-- Área de comentarios -->
+                    <div style="margin-top: 15px;">
+                        <h3>Comentarios</h3>
+                        <ul id="comments-<%= product.id %>" style="list-style: none; padding: 0;"></ul>
+                        <input type="text" id="comment-input-<%= product.id %>" placeholder="Escribe un comentario" style="width: 80%; padding: 5px;">
+                        <button onclick="sendComment('<%= product.id %>')" style="background-color: blue; color: white; padding: 5px; border: none; cursor: pointer;">
+                            Enviar
+                        </button>
+                    </div>
                 </div>
             <% }) %>
         </div>
@@ -27,7 +37,7 @@
     </div>
 </div>
 
-<!-- Socket.IO y lógica del carrito -->
+<!-- Socket.IO y lógica -->
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
@@ -85,6 +95,27 @@
                     carritoItems.innerHTML = '<li>Tu carrito está vacío.</li>';
                 }
             });
+    });
+
+    // Función para enviar un comentario
+    function sendComment(productId) {
+        const input = document.getElementById(`comment-input-${productId}`);
+        const comment = input.value.trim();
+        if (comment) {
+            socket.emit('sendComment', { productId, comment }); // Emitir el comentario al servidor
+            input.value = ''; // Limpiar input
+        }
+    }
+
+    // Mostrar comentarios en tiempo real
+    socket.on('receiveComment', (data) => {
+        const commentsList = document.getElementById(`comments-${data.productId}`);
+        if (commentsList) {
+            const li = document.createElement('li');
+            li.textContent = data.comment;
+            li.style.margin = '5px 0';
+            commentsList.appendChild(li);
+        }
     });
 </script>
 

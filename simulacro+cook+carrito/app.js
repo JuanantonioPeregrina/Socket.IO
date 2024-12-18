@@ -21,19 +21,22 @@ const { Server } = require('socket.io');
 const io = require('socket.io')(server);
 
 io.on('connection', (socket) => {
-    console.log('Nuevo cliente conectado');
+  console.log('Nuevo cliente conectado');
 
-    // Escuchar el evento de comentarios
-    socket.on('sendComment', (comment) => {
-        console.log(`Comentario recibido: ${comment}`);
-        // Enviar el comentario a todos los clientes conectados
-        io.emit('receiveComment', comment); // Esto asegura que todos reciban el mensaje
-    });
+  // Escuchar el evento de comentarios
+  socket.on('sendComment', (data) => {
+      const { productId, comment } = data;
+      console.log(`Comentario recibido en producto ${productId}: ${comment}`);
+      
+      // Reenviar el comentario a todos los clientes
+      io.emit('receiveComment', { productId, comment }); 
+  });
 
-    socket.on('disconnect', () => {
-        console.log('Cliente desconectado');
-    });
+  socket.on('disconnect', () => {
+      console.log('Cliente desconectado');
+  });
 });
+
 
 app.use((req, res, next) => {
     req.io = io;
